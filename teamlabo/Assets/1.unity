@@ -515,17 +515,17 @@ Prefab:
     - target: {fileID: 114498511005773380, guid: acb9d82ca4bb74ede8c7f78db872688a,
         type: 2}
       propertyPath: lv1
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 114498511005773380, guid: acb9d82ca4bb74ede8c7f78db872688a,
         type: 2}
       propertyPath: lv2
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 114498511005773380, guid: acb9d82ca4bb74ede8c7f78db872688a,
         type: 2}
       propertyPath: lv3
-      value: 1
+      value: 20
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: acb9d82ca4bb74ede8c7f78db872688a, type: 2}
