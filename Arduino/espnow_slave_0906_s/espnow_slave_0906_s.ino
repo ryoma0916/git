@@ -15,31 +15,51 @@ extern "C" {
 
 char ssid[] = "hotland_wifi";
 char password[] = "wp_dnaltoh";
+//char ssid[] = "ryoma";
+//char password[] = "ruru0916";
 char host[] = "engawa2525.com";
 String line = "";
 String url = "/ondo/log?key=";
-uint8_t mac[][6] = {
-  {0x5C,0xCF,0x7F,0xF4,0x3A,0x33},
-  {0x5C,0xCF,0x7F,0x32,0x93,0xBC},
-  {0x5C,0xCF,0x7F,0x29,0xF7,0x36},
-  {0x5C,0xCF,0x7F,0x32,0x92,0x7C}
+
+uint8_t cont_mac[][6] = {
+  {0x5C,0xCF,0x7F,0x00,0x00,0x00},
+  {0x5C,0xCF,0x7F,0x00,0x00,0x01},
+  {0x5C,0xCF,0x7F,0x00,0x00,0x02},
+  {0x5C,0xCF,0x7F,0x00,0x00,0x03}
   };
+  
+//uint8_t st_newmacaddr[6] = {0xA0,0x20,0xA6,0xAA,0xAA,0xBB};
+uint8_t slave_mac[6] = {0xA0,0x20,0xA6,0x00,0x00,0x00};
+
 uint8_t arr[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 bool flag1 = 0;
 
 void setup() {
   Serial.begin(74880);
   delay(100);
+
+
+  uint8_t macaddr[6];
+  wifi_set_opmode(STATIONAP_MODE);
+
+//  bool a = wifi_set_macaddr(STATION_IF, st_newmacaddr);//11/1
+//  Serial.print("changeSTA :");
+//  Serial.println(a);
+
+  
+  bool b = wifi_set_macaddr(SOFTAP_IF, slave_mac);//11/1
+  Serial.print("change Slave :");
+  Serial.println(b);
+
+  
   Serial.println("Initializing...");
-  Serial.println("");
   WiFi.mode(WIFI_AP);
   WiFi.softAP("test", "12345678", 1, 0);
 
-  uint8_t macaddr[6];
   wifi_get_macaddr(STATION_IF, macaddr);
   Serial.print("mac address (STATION_IF): ");
   printMacAddress(macaddr);
-
+  
   wifi_get_macaddr(SOFTAP_IF, macaddr);
   Serial.print("mac address (SOFTAP_IF): ");
   printMacAddress(macaddr);
@@ -68,11 +88,11 @@ void setup() {
     Serial.println("");
   });
 
-  int l = sizeof(mac) / sizeof(mac[0]);
+  int l = sizeof(cont_mac) / sizeof(cont_mac[0]);
   for (int i = 0; i < l; i++) {
     Serial.print("ch=");
     Serial.print(i);
-    Serial.println(esp_now_add_peer(mac[i], (uint8_t)ESP_NOW_ROLE_CONTROLLER, (uint8_t)WIFI_DEFAULT_CHANNEL, NULL, 0));
+    Serial.println(esp_now_add_peer(cont_mac[i], (uint8_t)ESP_NOW_ROLE_CONTROLLER, (uint8_t)WIFI_DEFAULT_CHANNEL, NULL, 0));
   }
   
 }
@@ -82,9 +102,11 @@ void loop() {
     WiFi.disconnect();
     wifi();
     sendurl();
+    delay(500);
     flag1 = 0;
     delay(1000);
-    ESP.deepSleep(110e6, WAKE_RF_DEFAULT);
+    ESP.deepSleep(5e6, WAKE_RF_DEFAULT);
+ 
   }
 
 }

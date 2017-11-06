@@ -14,8 +14,11 @@ extern "C" {
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
+uint8_t slave_mac[] = {0xA0,0x20,0xA6,0x00,0x00,0x00};
 
-uint8_t mac[] = {0x5E,0xCF,0x7F,0x91,0x33,0x66};
+uint8_t cont_mac[6] = {0x5C,0xCF,0x7F,0x00,0x00,0x01};
+//uint8_t so_newmacaddr[6] = {0x5E,0xCF,0x7F,0x90,0x22,0x22};
+
 int place_num = 02;
 int shop_num = 00;
 int fridge_num = 02;
@@ -61,14 +64,26 @@ void setup() {
   }
   Serial.println(temp);
 //sensor end
-
   int temp2 = (2*temp) + 50;
+  
+//change mac
+ uint8_t macaddr[6];
+  wifi_set_opmode(STATIONAP_MODE);
+
+  bool a = wifi_set_macaddr(STATION_IF, cont_mac);//11/1
+  Serial.print("change Cont :");
+  Serial.println(a);
+  
+//  bool b = wifi_set_macaddr(SOFTAP_IF, so_newmacaddr);//11/1
+//  Serial.print("changeSOF :");
+//  Serial.println(b);
+
+
   
 //espnow start
   Serial.println("Initializing...");
   WiFi.mode(WIFI_STA);
 
-  uint8_t macaddr[6];
   wifi_get_macaddr(STATION_IF, macaddr);
   Serial.print("mac address (STATION_IF): ");
   printMacAddress(macaddr);
@@ -107,9 +122,9 @@ void setup() {
     Serial.print("status = "); Serial.println(status);
   });
 
-  int res = esp_now_add_peer(mac, (uint8_t)ESP_NOW_ROLE_SLAVE,(uint8_t)WIFI_DEFAULT_CHANNEL, NULL, 0);
+  int res = esp_now_add_peer(slave_mac, (uint8_t)ESP_NOW_ROLE_SLAVE,(uint8_t)WIFI_DEFAULT_CHANNEL, NULL, 0);
   uint8_t message[] = {place_num,shop_num,fridge_num,temp2,random_num1,dst};
-  esp_now_send(mac, message, sizeof(message));
+  esp_now_send(slave_mac, message, sizeof(message));
 //espnow end
 
   Serial.println(dst);
