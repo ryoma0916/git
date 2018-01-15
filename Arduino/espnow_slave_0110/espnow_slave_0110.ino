@@ -1,0 +1,121 @@
+#include <ArduinoJson.h>
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <DNSServer.h>
+#include <WiFiClient.h>
+#include <EEPROM.h>
+#include <ESP8266WebServer.h>
+#include <SPI.h>
+
+extern "C" {
+#include <espnow.h>
+#include <user_interface.h>
+}
+
+#define WIFI_DEFAULT_CHANNEL 1
+
+char ssid[] = "HG8045-DE06-bg";
+char password[] = "tc3y8h59";
+char host[] = "engawa2525.com";
+String line = "";
+String url = "/ondo/log?key=";
+
+uint8_t cont_mac[][6] = {
+  {0x5C,0xCF,0x7F,0x00,0x00,0x00},
+  {0x5C,0xCF,0x7F,0x00,0x00,0x01},
+  {0x5C,0xCF,0x7F,0x00,0x00,0x02},
+  {0x5C,0xCF,0x7F,0x00,0x00,0x03}
+  };
+  
+//uint8_t st_newmacaddr[6] = {0xA0,0x20,0xA6,0xAA,0xAA,0xBB};
+uint8_t slave_mac[6] = {0xA0,0x20,0xA6,0x00,0x00,0x00};
+
+uint8_t arr[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+bool flag1 = 0;
+int count = 0;
+
+void setup() {
+  Serial.begin(74880);
+  delay(100);
+
+  uint8_t macaddr[6];
+  wifi_set_opmode(STATIONAP_MODE);
+
+//  bool a = wifi_set_macaddr(STATION_IF, st_newmacaddr);//11/1
+//  Serial.print("changeSTA :");
+//  Serial.println(a);
+
+  
+  bool b = wifi_set_macaddr(SOFTAP_IF, slave_mac);//11/1
+  Serial.print("change Slave :");
+  Serial.println(b);
+
+  Serial.println("Initializing...");
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("test", "12345678", 1, 0);
+
+  wifi_get_macaddr(STATION_IF, macaddr);
+  Serial.print("mac address (STATION_IF): ");
+  printMacAddress(macaddr);
+
+  wifi_get_macaddr(SOFTAP_IF, macaddr);
+  Serial.print("mac address (SOFTAP_IF): ");
+  printMacAddress(macaddr);
+
+  if (esp_now_init() == 0) {
+    Serial.println("init");
+  } else {
+    Serial.println("init failed");
+    ESP.restart();
+    return;
+  }
+
+  esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+  esp_now_register_recv_cb([](uint8_t *macaddr, uint8_t *data, uint8_t len) {
+    Serial.println("recv_cb");
+    flag1 = 1;
+    Serial.print("mac address: ");
+    printMacAddress(macaddr);
+
+    Serial.print("data: ");
+    for (int i = 0; i < len; i++) {
+      Serial.print(data[i]);
+      arr[i] = data[i];
+      Serial.print(",");
+    }
+    Serial.println("");
+  });
+
+  int l = sizeof(cont_mac) / sizeof(cont_mac[0]);
+  for (int i = 0; i < l; i++) {
+    Serial.print("ch=");
+    Serial.print(i);
+    Serial.println(esp_now_add_peer(cont_mac[i], (uint8_t)ESP_NOW_ROLE_CONTROLLER, (uint8_t)WIFI_DEFAULT_CHANNEL, NULL, 0));
+  }
+  
+}
+
+void loop() {
+  delay(1000);
+  count = count + 1;
+  Serial.println(count);
+  if (flag1 == 1) {
+    WiFi.disconnect();
+    wifi();
+    sendurl();
+    flag1 = 0;
+    count = 0;
+    delay(1000);
+    ESP.deepSleep(30e6, WAKE_RF_DEFAULT);
+  }
+ if (count==1800){
+    WiFi.disconnect();
+    wifi();
+    sendalive();
+    count = 0;
+    delay(1000);
+    ESP.deepSleep(30e6, WAKE_RF_DEFAULT);
+ }
+}
+
+
